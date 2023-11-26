@@ -8,11 +8,25 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    Name = Column(String(50), unique=False, nullable=False)
-    Sport = Column(String(50), unique=False, nullable=False)
+    username = Column(String(50), unique=True, nullable=False)
+    email= Column(String(50), unique=True, nullable=False)
+    password = Column(String(50), unique=False, nullable=False)
 
-class Book(Base):
-    __tablename__ = 'books'
+class Game(Base):
+    __tablename__ = 'games'
 
     id = Column(Integer, primary_key=True)
-    Title = Column(String(100), unique=True, nullable=False)
+    title = Column(String(100), unique=True, nullable=False)
+    platforms=Column(String(100), unique=False, nullable=False)
+    companys=Column(String(100), unique=False, nullable=False)
+    descripthion=Column(String(100), unique=False, nullable=False)
+    img=Column(String(200), unique=False, nullable=False)
+
+class News(Base):
+    __tablename__ = 'news'
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String(100), unique=True, nullable=False)
+    author=Column(String(100), unique=False, nullable=False)
+    descripthion=Column(String(2000), unique=False, nullable=False)
+    img=Column(String(200), unique=False, nullable=False)

@@ -1,0 +1,51 @@
+{% extends  "base.html" %}
+
+{% block title %} Create {% endblock %}
+
+{% block body %} 
+<form action="/" method="post" class="my-4">
+    <div class="mb-3">
+        <label for="gameTitle" class="form-label">Title</label>
+        <input id="gameTitle" name="title" class="form-control" placeholder="Title" required type="text">
+    </div>
+    <div class="mb-3">
+        <label for="gamePlatforms" class="form-label">Platforms</label>
+        <input id="gamePlatforms" name="platforms" class="form-control" placeholder="Platforms" required type="text">
+    </div>
+    <div class="mb-3">
+        <label for="gameCompanies" class="form-label">Companies</label>
+        <input id="gameCompanies" name="companys" class="form-control" placeholder="Companies" required type="text">
+    </div>
+    <div class="mb-3">
+        <label for="gameDescription" class="form-label">Description</label>
+        <textarea id="gameDescription" name="description" class="form-control" placeholder="Description" required></textarea>
+    </div>
+    <div class="mb-3">
+        <label for="gameImg" class="form-label">Image URL</label>
+        <input id="gameImg" name="img" class="form-control" placeholder="Image URL" required type="text">
+    </div>
+    <button type="submit" class="btn btn-primary">Create Game</button>
+</form>
+
+<form action="/" method="post" class="my-4">
+    <div class="mb-3">
+        <label for="newsTitle" class="form-label">Title</label>
+        <input id="newsTitle" name="title" class="form-control" placeholder="Title" required type="text">
+    </div>
+    <div class="mb-3">
+        <label for="newsAuthor" class="form-label">Author</label>
+        <input id="newsAuthor" name="author" class="form-control" placeholder="Author" required type="text">
+    </div>
+    <div class="mb-3">
+        <label for="newsDescription" class="form-label">Description</label>
+        <textarea id="newsDescription" name="description" class="form-control" placeholder="Description" required></textarea>
+    </div>
+    <div class="mb-3">
+        <label for="newsImg" class="form-label">Image URL</label>
+        <input id="newsImg" name="img" class="form-control" placeholder="Image URL" required type="text">
+    </div>
+    <button type="submit" class="btn btn-primary">Create News</button>
+</form>
+
+{% endblock %}
+

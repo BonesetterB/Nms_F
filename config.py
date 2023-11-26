@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings  import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -14,7 +14,9 @@ class Settings(BaseSettings):
     redis_port: int = 6379
 
     class Config:
+        extra = "ignore"   
         env_file = ".env"
+        extra = "ignore"
         env_file_encoding = "utf-8"
 
 
