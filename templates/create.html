@@ -3,7 +3,8 @@
 {% block title %} Create {% endblock %}
 
 {% block body %} 
-<form action="/" method="post" class="my-4">
+<form action="/create" method="post" class="my-4">
+    <input type="hidden" name="form_type" value="game">
     <div class="mb-3">
         <label for="gameTitle" class="form-label">Title</label>
         <input id="gameTitle" name="title" class="form-control" placeholder="Title" required type="text">
@@ -27,7 +28,8 @@
     <button type="submit" class="btn btn-primary">Create Game</button>
 </form>
 
-<form action="/" method="post" class="my-4">
+<form action="/create" method="post" class="my-4">
+    <input type="hidden" name="form_type" value="news">
     <div class="mb-3">
         <label for="newsTitle" class="form-label">Title</label>
         <input id="newsTitle" name="title" class="form-control" placeholder="Title" required type="text">

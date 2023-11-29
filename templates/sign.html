@@ -1,12 +1,34 @@
 {% extends  "base.html" %}
 
-{% block title %} Games {% endblock %}
+{% block title %} Sign {% endblock %}
 
 {% block body %} 
 <form action="/sign" method="post">
-    <input autocomplete="off" autofocus name="username" placeholder="Username" type="text">
-    <input autocomplete="off" autofocus name="email" placeholder="Email" type="text">
-    <input autocomplete="off" autofocus name="password" placeholder="Password" type="text">
+    <input class="form-control mb-3" autocomplete="off" autofocus name="username" placeholder="Username" type="text">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category == 'error_name' %}
+                <div class="alert alert-danger" role="alert">
+                    {{ message }}
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <input class="form-control mb-3" autocomplete="off" autofocus name="email" placeholder="Email" type="text">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                {% if category == 'error_email' %}
+                <div class="alert alert-danger" role="alert">
+                    {{ message }}
+                </div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <input class="form-control mb-3" autocomplete="off" autofocus name="password" placeholder="Password" type="text">
     <input type="submit" value="Login" />
 </form>
 {% endblock %}

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase,sessionmaker
 
 from config import settings
 
@@ -20,8 +20,8 @@ class Base(AsyncAttrs, DeclarativeBase):
 class DatabaseSessionManager:
     def __init__(self, url: str):
         self._engine: AsyncEngine | None = create_async_engine(url)
-        self._session_maker: async_sessionmaker | None = async_sessionmaker(
-            autocommit=False, autoflush=False, expire_on_commit=False, bind=self._engine
+        self._session_maker: sessionmaker | None = sessionmaker(
+            autocommit=False, autoflush=False, expire_on_commit=False, bind=self._engine, class_=AsyncSession
         )
 
     @contextlib.asynccontextmanager

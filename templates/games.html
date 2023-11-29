@@ -1,8 +1,18 @@
-{% extends  "base.html" %}
+{% extends "base.html" %}
 
 {% block title %} Games {% endblock %}
 
 {% block body %} 
-<h1> Hello </h1>
+<h1 class="text-center mt-4 mb-3"> Games </h1>
+<ul class="list-group">
+  {% for game in games %}
+    <li class="list-group-item">
+      <h2>{{ game.title }}</h2>
+      <p><strong>Platforms:</strong> {{ game.platforms }}</p>
+      <p><strong>Companies:</strong> {{ game.companys }}</p>
+      <p><strong>Description:</strong> {{ game.descripthion }}</p>
+      <img src="{{ game.img }}" alt="{{ game.title }} Image" class="img-fluid">
+    </li>
+  {% endfor %}
+</ul>
 {% endblock %}
-

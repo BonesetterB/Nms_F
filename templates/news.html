@@ -1,8 +1,17 @@
-{% extends  "base.html" %}
+{% extends "base.html" %}
 
 {% block title %} News {% endblock %}
 
 {% block body %} 
-<h1> Hello </h1>
+<h1 class="text-center mt-4 mb-3"> News </h1>
+<ul class="list-group">
+  {% for new in news %}
+    <li class="list-group-item">
+      <h2>{{ new.title }}</h2>
+      <p><strong>Author:</strong> {{ new.author }}</p>
+      <p><strong>Description:</strong> {{ new.descripthion }}</p>
+      <img src="{{ new.img }}" alt="{{ new.title }} Image" class="img-fluid">
+    </li>
+  {% endfor %}
+</ul>
 {% endblock %}
-
