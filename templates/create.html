@@ -3,7 +3,7 @@
 {% block title %} Create {% endblock %}
 
 {% block body %} 
-<form action="/create" method="post" class="my-4">
+<form action="/create" method="post" enctype="multipart/form-data" class="my-4">
     <input type="hidden" name="form_type" value="game">
     <div class="mb-3">
         <label for="gameTitle" class="form-label">Title</label>
@@ -22,13 +22,13 @@
         <textarea id="gameDescription" name="description" class="form-control" placeholder="Description" required></textarea>
     </div>
     <div class="mb-3">
-        <label for="gameImg" class="form-label">Image URL</label>
-        <input id="gameImg" name="img" class="form-control" placeholder="Image URL" required type="text">
+        <label for="gameImg" class="form-label">Image Upload</label>
+        <input id="gameImg" name="img" class="form-control" accept="image/*" type="file">
     </div>
-    <button type="submit" class="btn btn-primary">Create Game</button>
+    <button type="submit" value="Upload" class="btn btn-primary">Create Game</button>
 </form>
 
-<form action="/create" method="post" class="my-4">
+<form action="/create" method="post" enctype="multipart/form-data" class="my-4">
     <input type="hidden" name="form_type" value="news">
     <div class="mb-3">
         <label for="newsTitle" class="form-label">Title</label>
@@ -43,8 +43,8 @@
         <textarea id="newsDescription" name="description" class="form-control" placeholder="Description" required></textarea>
     </div>
     <div class="mb-3">
-        <label for="newsImg" class="form-label">Image URL</label>
-        <input id="newsImg" name="img" class="form-control" placeholder="Image URL" required type="text">
+        <label for="gameImg" class="form-label">Image Upload</label>
+        <input id="gameImg" name="img" class="form-control" accept="image/*"  type="file">
     </div>
     <button type="submit" class="btn btn-primary">Create News</button>
 </form>

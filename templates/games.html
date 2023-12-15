@@ -4,15 +4,21 @@
 
 {% block body %} 
 <h1 class="text-center mt-4 mb-3"> Games </h1>
-<ul class="list-group">
+
+<div class="row">
   {% for game in games %}
-    <li class="list-group-item">
-      <h2>{{ game.title }}</h2>
-      <p><strong>Platforms:</strong> {{ game.platforms }}</p>
-      <p><strong>Companies:</strong> {{ game.companys }}</p>
-      <p><strong>Description:</strong> {{ game.descripthion }}</p>
-      <img src="{{ game.img }}" alt="{{ game.title }} Image" class="img-fluid">
-    </li>
+    <div class="col-md-4 mb-4">
+      <div class="card">
+        <img src="{{ game.img }}" class="card-img-top" alt="{{ game.title }} Image">
+        <div class="card-body">
+          <h5 class="card-title">{{ game.title }}</h5>
+          <p class="card-text"><strong>Platforms:</strong> {{ game.platforms }}</p>
+          <p class="card-text"><strong>Companies:</strong> {{ game.companys }}</p>
+          <p class="card-text"><strong>Description:</strong> {{ game.description }}</p>
+        </div>
+      </div>
+    </div>
+    {% if loop.index % 3 == 0 %}</div><div class="row">{% endif %}
   {% endfor %}
-</ul>
+</div>
 {% endblock %}
