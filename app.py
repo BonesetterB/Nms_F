@@ -5,8 +5,8 @@ from config import settings
 from db import connect_to_db
 import cloudinary
 import cloudinary.uploader
-
-
+import os
+import DateTime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI']=settings.sqlalchemy_database_url
@@ -51,14 +51,15 @@ async def create():
 
 
             new_game = await db.fetchrow(
-                "INSERT INTO games (title, platforms, companys,descripthion,img) VALUES ($1, $2, $3,$4,$5) RETURNING *",
+                "INSERT INTO games (title, platforms, companys,description,img,created_at) VALUES ($1, $2, $3,$4,$5, now()) RETURNING *",
                 request.form.get("title"),
                 request.form.get("platforms"),
                 request.form.get("companys"),
                 request.form.get("description"),
-                photo_url
+                photo_url,
             )
             await db.close()
+            os.remove(filename)
             return redirect("/games")
 
         
@@ -83,14 +84,15 @@ async def create():
             public_id = uploaded_file_info["public_id"]
 
             new_news = await db.fetchrow(
-                "INSERT INTO news (title, author,descripthion,img) VALUES ($1, $2, $3,$4) RETURNING *",
+                "INSERT INTO news (title, author,description,img,created_at) VALUES ($1, $2, $3,$4, now()) RETURNING *",
                 request.form.get("title"),
-                request.form.get("author"),
+                session.get('username'),
                 request.form.get("description"),
                 photo_url
             )
 
             await db.close()
+            os.remove(filename)
             return redirect("/news")
     
     # if not session.get("role"):
@@ -125,15 +127,18 @@ async def sign():
                 return render_template("sign.html")
 
             new_user = await db.fetchrow(
-                "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *",
+                "INSERT INTO users (username, email, password,created_at,role,img) VALUES ($1, $2, $3,now(),$4,$5) RETURNING *",
                 request.form.get("username"),
                 request.form.get("email"),
-                request.form.get("password")
+                request.form.get("password"),
+                'User',
+                'https://res-console.cloudinary.com/dhthhnmne/thumbnails/v1/image/upload/v1702913089/0JHQtdC3X9C90LDQt9Cy0LDQvdC40Y9fNF9lenF3dDY=/preview'
             )
             await db.close()
             
             session["username"]=request.form.get("username")
-
+            session["role"] = 'User'
+            
             return  redirect("/")
     
     return  render_template("sign.html")
@@ -152,12 +157,27 @@ async def login():
             return render_template("login.html")
         
         session["username"] = request.form.get("username")
+        session["role"] = name_res[5]
+
         await db.close()
         return redirect("/")
     
     return render_template("login.html")
 
-
+@app.route("/profile/<username>", methods=["GET","POST"])
+async def profile(username):
+    db = await connect_to_db()
+    user = await db.fetchrow(
+            "SELECT * FROM users WHERE username = $1",
+            username
+        )
+    await db.close()
+    if request.method == "POST":
+        
+        await db.close()
+        return redirect("/")
+    
+    return render_template("profile.html", user=user)
 
 @app.route("/out")
 def out():
@@ -167,45 +187,135 @@ def out():
 
 
 @app.route("/games", methods=["GET","POST"])
-async def games():
+async def games(): 
     conn = await connect_to_db()
     try:
-        games = await conn.fetch('SELECT * FROM games')
-        return games
+        offset = (1 - 1) * 2
+        query = 'SELECT * FROM games LIMIT $1 OFFSET $2'
+        games = await conn.fetch(query, 2, offset)
     finally:
         await conn.close()
-    # if not session.get("username"):
-    #     return  redirect("/login")
         return  render_template("games.html", games=games)
 
-@app.route('/games/<int:game_id>')
-def game_detail(game_id):
-    game = next((game for game in games if game["id"] == game_id), None)
-    if game:
-        return render_template('game.html', game=game)
-    else:
-        return "Game not found", 404
+@app.route("/games_page/<int:page>")
+async def games_page(page):
+    conn = await connect_to_db()
+    try:
+        offset = (page - 1) * 2
+        query = 'SELECT * FROM games LIMIT $1 OFFSET $2'
+        games = await conn.fetch(query, 2, offset)
+    finally:
+        await conn.close()
+    
+        return render_template("games.html", games=games)
 
-@app.route("/news", methods=["GET","POST"])
+
+@app.route('/games/<int:game_id>', methods=["GET","POST"])
+async def game_detail(game_id):
+    conn = await connect_to_db()
+    if request.method == 'POST':
+        try:
+            rating = request.form['rating']
+            name=session['username']
+            user=await conn.fetchrow(
+                "SELECT * FROM users WHERE username=$1",
+                name
+            )
+            new_rating = await conn.fetchrow(
+                "INSERT INTO ratings (user_id, rating, games_id) VALUES ($1, $2, $3) RETURNING *",
+                user[0], 
+                int(rating),
+                game_id,
+            )
+        except: 
+                flash("You cannot rate without authorization!", "error")
+                return redirect(f"/games/{game_id}")
+        
+        finally:
+            await conn.close()
+        return redirect(f"/games/{game_id}")
+    try:
+        ratings= await conn.fetch('SELECT * FROM ratings WHERE games_id=$1', game_id)
+        game = await conn.fetch('SELECT * FROM games WHERE id=$1', game_id)
+        rating=[]
+        for i in ratings:
+            rating.append(int(i[1]))
+        r=sum(rating)/len(rating)
+    
+    except:
+        r='There are no ratings yet'
+
+    finally:
+        await conn.close()
+
+        return  render_template("game.html", game=game[0],rating=r)
+
+
+@app.route("/news")
 async def news():
     conn = await connect_to_db()
     try:
-        news = await conn.fetch('SELECT * FROM news')
-        return news
+        offset = (1 - 1) * 2
+        query = 'SELECT * FROM news LIMIT $1 OFFSET $2'
+        news = await conn.fetch(query, 2, offset)
     finally:
         await conn.close()
     
         return render_template("news.html", news=news)
 
-@app.route('/news/<int:news_id>')
-def new_detail(news_id):
-    new = next((new for new in games if new["id"] == news_id), None)
-    if new:
-        return render_template('new.html', new=new)
-    else:
-        return "Game not found", 404
+@app.route("/news_page/<int:page>")
+async def news_page(page):
+    conn = await connect_to_db()
+    try:
+        offset = (page - 1) * 2
+        query = 'SELECT * FROM news LIMIT $1 OFFSET $2'
+        news = await conn.fetch(query, 2, offset)
+    finally:
+        await conn.close()
+    
+        return render_template("news.html", news=news)
 
-    # Припустимо, у вас є список `news`, який містить об'єкти новин
+@app.route('/news/<int:news_id>', methods=["GET","POST"])
+async def new_detail(news_id):
+    conn = await connect_to_db()
+
+    if request.method == 'POST':
+        try:
+            rating = request.form['rating']
+            name=session['username']
+            user=await conn.fetchrow(
+                "SELECT * FROM users WHERE username=$1",
+                name
+            )
+            new_rating = await conn.fetchrow(
+                "INSERT INTO ratings (user_id, rating, news_id) VALUES ($1, $2, $3) RETURNING *",
+                user[0], 
+                int(rating),
+                news_id,
+            )
+        except: 
+                flash("You cannot rate without authorization!", "error")
+                return redirect(f"/news/{news_id}")
+        
+        finally:
+            await conn.close()
+        return redirect(f"/news/{news_id}")
+    try:
+        comments=await conn.fetch('SELECT * FROM coments WHERE news_id=$1', news_id)
+        ratings= await conn.fetch('SELECT * FROM ratings WHERE news_id=$1', news_id)
+        new = await conn.fetch('SELECT * FROM news WHERE id=$1', news_id)
+        rating=[]
+        for i in ratings:
+            rating.append(int(i[1]))
+        r=sum(rating)/len(rating)
+    except:
+        r='There are no ratings yet'
+        return  render_template("new.html", new=new[0],rating=r,comments=comments)
+    finally:
+        await conn.close()
+
+        return  render_template("new.html", new=new[0],rating=r,comments=comments)
+
 
 # # Сортування новин за рейтингом (припустимо, що рейтинг зберігається у полі `rating`)
 # sorted_by_rating = sorted(news, key=lambda x: x.rating, reverse=True)

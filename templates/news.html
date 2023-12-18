@@ -11,8 +11,8 @@
       <div class="card">
         <img src="{{ new.img }}" class="card-img-top" alt="{{ new.title }} Image">
         <div class="card-body">
-          <h5 class="card-title">{{ new.title }}</h5>
-          <p class="card-text"><strong>Author:</strong> {{ new.author }}</p>
+          <a class="card-title"href="/news/{{new.id}}">{{ new.title }} </a>
+          <a class="card-title" href="/profile/{{new.author}}"><strong>Author:</strong> {{ new.author }}</a>
           <p class="card-text"><strong>Description:</strong> {{ new.description }}</p>
         </div>
       </div>

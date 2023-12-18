@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %} User Profile: {{ user.username }} {% endblock %}
+
+{% block body %} 
+<div class="container mt-4">
+    <h1 class="text-center mb-3">User Profile: {{ user.username }}</h1>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="{{ user.img }}" class="card-img-top" alt="{{ user.username }} Image">
+                <div class="card-body">
+                    <h2 class="card-title">{{ user.username }}</h2>
+                    <p class="card-text"><strong>Role:</strong> {{ user.role }}</p>
+                    <p class="card-text"><strong>Description:</strong> {{ user.description }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
