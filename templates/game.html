@@ -9,7 +9,17 @@
     <div class="row">
         <div class="col-md-6">
             <p class="lead">{{ game.description }}</p>
-
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="tags-container">
+                            {% for tag in tags %}
+                                <span class="badge bg-secondary">{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
@@ -27,6 +37,22 @@
                 <input type="number" id="rating" name="rating" min="1" max="5">
                 <input type="submit" value="Submit">
             </form>
+
+            <h3>Comments:</h3>
+            <ul>
+                {% for comment in comments %}
+                    <li>{{ comment["User"]}} : {{comment["Content"]}}</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Add a Comment:</h3>
+            <form action="/games/{{ game.id }}" method="post">
+                <input type="hidden" name="form_type" value="coments">
+                <label for="comment">Your Comment:</label><br>
+                <textarea id="comment" name="comment" rows="4" cols="50"></textarea><br>
+                <input type="submit" value="Submit">
+            </form>
+
         </div>
         <div class="col-md-6">
             <img src="{{ game.img }}" class="img-fluid" alt="{{ game.title }} Image">

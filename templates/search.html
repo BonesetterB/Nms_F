@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %} Search Results {% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <h2>Games</h2>
+            <ul>
+                {% if not games %}
+                    <p>No games found</p>
+                {% else %}
+                {% for game in games %}
+                <div class="row"></div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                        <img src="{{ game.img }}" class="card-img-top" alt="{{ game.title }} Image">
+                        <div class="card-body">
+                            <a class="card-title" href="/games/{{game.id}}">{{ game.title }}</a>
+                            <p class="card-text"><strong>Platforms:</strong> {{ game.platforms }}</p>
+                            <p class="card-text"><strong>Companies:</strong> {{ game.companys }}</p>
+                            <p class="card-text"><strong>Description:</strong> {{ game.description }}</p>
+                            {% if game.tag_name %}
+                            <p class="card-text"><strong>Tags:</strong> {{ game.tag_name }}</p>
+                            {% endif %}
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </ul>
+
+        </div>
+        <div class="col-md-6">
+            <h2>News</h2>
+            <ul>
+                {% if not news %}
+                    <p>No news found</p>
+                {% else %}
+
+                {% for new in news %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                        <img src="{{ new.img }}" class="card-img-top" alt="{{ new.title }} Image">
+                        <div class="card-body">
+                            <a class="card-title"href="/news/{{new.id}}">{{ new.title }} </a>
+                            <a class="card-title" href="/profile/{{new.author}}"><strong>Author:</strong> {{ new.author }}</a>
+                            <p class="card-text"><strong>Description:</strong> {{ new.description }}</p>
+                        </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

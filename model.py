@@ -44,6 +44,25 @@ class User(Base):
     news = relationship("News", back_populates="user")
     coments=relationship("Coments", back_populates="user")
 
+game_tag_association = Table(
+    'game_tag_association',
+    Base.metadata,
+    Column('game_id', Integer, ForeignKey('games.id')),
+    Column('tag_id', Integer, ForeignKey('tags.id'))
+)
+
+news_tag_association = Table(
+    'news_tag_association',
+    Base.metadata,
+    Column('news_id', Integer, ForeignKey('news.id')),
+    Column('tag_id', Integer, ForeignKey('tags.id'))
+)
+
+class Tag(Base):
+    __tablename__ = 'tags'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), nullable=False, unique=True)
+
 
 class Game(Base):
     __tablename__ = 'games'
@@ -62,6 +81,8 @@ class Game(Base):
     coments=relationship(
         "Coments", back_populates="news", cascade="all, delete-orphan"
     )
+    tags = relationship('Tag', secondary=game_tag_association, backref='games')
+
     
 class News(Base):
     __tablename__ = 'news'
@@ -79,6 +100,8 @@ class News(Base):
     coments=relationship(
         "Coments", back_populates="news", cascade="all, delete-orphan"
     )
+    tags = relationship('Tag', secondary=news_tag_association, backref='news')
+
 class Coments(Base):
     __tablename__ = 'coments'
 
@@ -95,3 +118,4 @@ class Coments(Base):
     games_id = Column(Integer, ForeignKey("games.id"), nullable=True)
     game = relationship("Game", back_populates="coments")
     news = relationship("News", back_populates="coments")
+

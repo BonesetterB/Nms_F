@@ -21,6 +21,24 @@ db=SQLAlchemy(app)
 def home():
     return  render_template("home.html")
 
+
+@app.route('/search', methods=['GET', 'POST'])
+async def search():
+    db= await connect_to_db()
+    if request.method == 'POST':
+        search = request.form.get('search')
+        print(search)
+
+        games=await db.fetchrow("SELECT 'games' AS source_table, * FROM games WHERE title ILIKE $1",f"%{search}%")
+        news=await db.fetchrow("SELECT 'news' AS source_table, * FROM news WHERE title ILIKE $1",f"%{search}%")
+        print(games)
+        return render_template('search.html', games=games,news=news)
+    
+    await db.close()
+    
+    return render_template('search.html', games=games,news=news)
+
+
 @app.route('/create', methods=["GET","POST"])
 async def create():
     if request.method == "POST":
@@ -31,6 +49,8 @@ async def create():
         db = await connect_to_db()
         x=request.form.get("title")
         if form_type == 'game':
+            tags_input = request.form.get("tags")
+            tags = tags_input.split(",") if tags_input else []
             title_res = await db.fetchrow(
                 "SELECT * FROM games WHERE title = $1",
                 request.form.get("title")
@@ -48,8 +68,6 @@ async def create():
             )
 
             photo_url = uploaded_file_info["secure_url"]
-
-
             new_game = await db.fetchrow(
                 "INSERT INTO games (title, platforms, companys,description,img,created_at) VALUES ($1, $2, $3,$4,$5, now()) RETURNING *",
                 request.form.get("title"),
@@ -58,6 +76,29 @@ async def create():
                 request.form.get("description"),
                 photo_url,
             )
+
+            if tags:
+                for tag_name in tags:
+                    tag = await db.fetchrow(
+                        "SELECT * FROM tags WHERE name = $1",
+                        tag_name.strip()
+                    )
+                    if tag is None:
+                        # Створити новий тег, якщо його не існує
+                        new_tag = await db.fetchrow(
+                            "INSERT INTO tags (name) VALUES ($1) RETURNING *",
+                            tag_name.strip()
+                        )
+                        tag_id = new_tag[0]
+                    else:
+                        tag_id = tag[0]
+
+                    # Додати зв'язок між грою та тегом
+                    await db.execute(
+                        "INSERT INTO game_tag_association (game_id, tag_id) VALUES ($1, $2)",
+                        new_game[0], tag_id
+                    )
+
             await db.close()
             os.remove(filename)
             return redirect("/games")
@@ -214,19 +255,34 @@ async def games_page(page):
 async def game_detail(game_id):
     conn = await connect_to_db()
     if request.method == 'POST':
+        form_type = request.form['form_type']
         try:
-            rating = request.form['rating']
-            name=session['username']
-            user=await conn.fetchrow(
-                "SELECT * FROM users WHERE username=$1",
-                name
-            )
-            new_rating = await conn.fetchrow(
-                "INSERT INTO ratings (user_id, rating, games_id) VALUES ($1, $2, $3) RETURNING *",
-                user[0], 
-                int(rating),
-                game_id,
-            )
+            if form_type=='rating':
+                rating = request.form['rating']
+                name=session['username']
+                user=await conn.fetchrow(
+                    "SELECT * FROM users WHERE username=$1",
+                    name
+                )
+                new_rating = await conn.fetchrow(
+                    "INSERT INTO ratings (user_id, rating, games_id) VALUES ($1, $2, $3) RETURNING *",
+                    user[0], 
+                    int(rating),
+                    game_id,
+                )
+            elif form_type == 'coments':
+                comment = request.form['comment']
+                name=session['username']
+                user=await conn.fetchrow(
+                    "SELECT * FROM users WHERE username=$1",
+                    name
+                )
+                new_coments = await conn.fetchrow(
+                    "INSERT INTO coments (user_id, content,created_at, games_id) VALUES ($1, $2,now(), $3) RETURNING *",
+                    user[0], 
+                    comment,
+                    game_id,
+                )
         except: 
                 flash("You cannot rate without authorization!", "error")
                 return redirect(f"/games/{game_id}")
@@ -234,21 +290,39 @@ async def game_detail(game_id):
         finally:
             await conn.close()
         return redirect(f"/games/{game_id}")
-    try:
-        ratings= await conn.fetch('SELECT * FROM ratings WHERE games_id=$1', game_id)
-        game = await conn.fetch('SELECT * FROM games WHERE id=$1', game_id)
-        rating=[]
-        for i in ratings:
-            rating.append(int(i[1]))
-        r=sum(rating)/len(rating)
-    
-    except:
-        r='There are no ratings yet'
+    else:
+        try:
+            tags=await conn.fetch('SELECT * FROM game_tag_association WHERE game_id=$1',game_id)
+            tag=[]
+            for i in tags:
+                tt=await conn.fetchrow(
+                    "SELECT * FROM tags WHERE id=$1",
+                    i[1]
+                )
+                tag.append(tt[1])
+            comments=await conn.fetch('SELECT * FROM coments WHERE games_id=$1', game_id)
+            com=[]
+            for C in comments:
+                user=await conn.fetchrow(
+                        "SELECT * FROM users WHERE id=$1",
+                        C[1]
+                    )
+                com.append({"User":user[1], "Content":C[2]})
+            ratings= await conn.fetch('SELECT * FROM ratings WHERE games_id=$1', game_id)
+            game = await conn.fetch('SELECT * FROM games WHERE id=$1', game_id)
+            rating=[]
+            for i in ratings:
+                rating.append(int(i[1]))
+            r=sum(rating)/len(rating)
+        
+        except:
+            r='There are no ratings yet'
+            return  render_template("game.html", game=game[0],rating=r,comments=com,tags=tag)
 
-    finally:
-        await conn.close()
+        finally:
+            await conn.close()
 
-        return  render_template("game.html", game=game[0],rating=r)
+            return  render_template("game.html", game=game[0],rating=r,comments=com,tags=tag)
 
 
 @app.route("/news")
@@ -280,19 +354,35 @@ async def new_detail(news_id):
     conn = await connect_to_db()
 
     if request.method == 'POST':
+        form_type = request.form['form_type']
         try:
-            rating = request.form['rating']
-            name=session['username']
-            user=await conn.fetchrow(
-                "SELECT * FROM users WHERE username=$1",
-                name
-            )
-            new_rating = await conn.fetchrow(
-                "INSERT INTO ratings (user_id, rating, news_id) VALUES ($1, $2, $3) RETURNING *",
-                user[0], 
-                int(rating),
-                news_id,
-            )
+            if form_type=='rating':
+                rating = request.form['rating']
+                name=session['username']
+                user=await conn.fetchrow(
+                    "SELECT * FROM users WHERE username=$1",
+                    name
+                )
+                new_rating = await conn.fetchrow(
+                    "INSERT INTO ratings (user_id, rating, news_id) VALUES ($1, $2, $3) RETURNING *",
+                    user[0], 
+                    int(rating),
+                    news_id,
+                )
+            elif form_type == 'coments':
+                comment = request.form['comment']
+                name=session['username']
+                user=await conn.fetchrow(
+                    "SELECT * FROM users WHERE username=$1",
+                    name
+                )
+                new_coments = await conn.fetchrow(
+                    "INSERT INTO coments (user_id, content,created_at, news_id) VALUES ($1, $2,now(), $3) RETURNING *",
+                    user[0], 
+                    comment,
+                    news_id,
+                )
+
         except: 
                 flash("You cannot rate without authorization!", "error")
                 return redirect(f"/news/{news_id}")
@@ -301,7 +391,23 @@ async def new_detail(news_id):
             await conn.close()
         return redirect(f"/news/{news_id}")
     try:
+        tags=await conn.fetch('SELECT * FROM news_tag_association WHERE news_id=$1',news_id)
+        tag=[]
+        for i in tags:
+                tt=await conn.fetchrow(
+                    "SELECT * FROM tags WHERE id=$1",
+                    i[1]
+                )
+                tag.append(tt[1])
+
         comments=await conn.fetch('SELECT * FROM coments WHERE news_id=$1', news_id)
+        com=[]
+        for C in comments:
+             user=await conn.fetchrow(
+                    "SELECT * FROM users WHERE id=$1",
+                    C[1]
+                )
+             com.append({"User":user[1], "Content":C[2]})
         ratings= await conn.fetch('SELECT * FROM ratings WHERE news_id=$1', news_id)
         new = await conn.fetch('SELECT * FROM news WHERE id=$1', news_id)
         rating=[]
@@ -310,11 +416,11 @@ async def new_detail(news_id):
         r=sum(rating)/len(rating)
     except:
         r='There are no ratings yet'
-        return  render_template("new.html", new=new[0],rating=r,comments=comments)
+        return  render_template("new.html", new=new[0],rating=r,comments=com,tags=tag)
     finally:
         await conn.close()
 
-        return  render_template("new.html", new=new[0],rating=r,comments=comments)
+        return  render_template("new.html", new=new[0],rating=r,comments=com,tags=tag)
 
 
 # # Сортування новин за рейтингом (припустимо, що рейтинг зберігається у полі `rating`)
