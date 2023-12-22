@@ -22,6 +22,23 @@ def home():
     return  render_template("home.html")
 
 
+@app.route('/confirm-email', methods=['GET', 'POST'])
+async def confirm_email():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        confirm_email = request.form.get('confirm_email')
+
+        if email == confirm_email:
+            # Отримано підтвердження пошти, робимо необхідні дії тут
+            # наприклад, перенаправлення на головну сторінку
+            flash('Email confirmed!', 'success')
+            return redirect(url_for('home'))
+        else:
+            flash('Emails do not match. Please try again.', 'error')
+            return render_template('check_email.html')
+
+    return render_template('check_email.html')
+
 @app.route('/search', methods=['GET', 'POST'])
 async def search():
     db= await connect_to_db()
