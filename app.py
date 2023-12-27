@@ -6,7 +6,7 @@ from db import connect_to_db
 import cloudinary
 import cloudinary.uploader
 import os
-import DateTime
+import asyncpg
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI']=settings.sqlalchemy_database_url
@@ -29,8 +29,6 @@ async def confirm_email():
         confirm_email = request.form.get('confirm_email')
 
         if email == confirm_email:
-            # Отримано підтвердження пошти, робимо необхідні дії тут
-            # наприклад, перенаправлення на головну сторінку
             flash('Email confirmed!', 'success')
             return redirect(url_for('home'))
         else:
@@ -44,12 +42,24 @@ async def search():
     db= await connect_to_db()
     if request.method == 'POST':
         search = request.form.get('search')
-        print(search)
 
-        games=await db.fetchrow("SELECT 'games' AS source_table, * FROM games WHERE title ILIKE $1",f"%{search}%")
-        news=await db.fetchrow("SELECT 'news' AS source_table, * FROM news WHERE title ILIKE $1",f"%{search}%")
-        print(games)
-        return render_template('search.html', games=games,news=news)
+        games=await db.fetchrow("SELECT games AS source_table, * FROM games WHERE title ILIKE $1",f"%{search}%")
+        news=await db.fetchrow("SELECT news AS source_table, * FROM news WHERE title ILIKE $1",f"%{search}%")
+        g=[]
+        n=[]
+        try:
+            for i in range(len(games)):
+                    if type(games[i])==asyncpg.Record:
+                        g.append(games[i])
+        except TypeError:
+            g=[]
+        try:
+            for i in range(len(news)):
+                    if type(news[i])==asyncpg.Record:
+                        n.append(news[i])
+        except TypeError:
+            n=[] 
+        return render_template('search.html', games=g,news=n)
     
     await db.close()
     
@@ -101,7 +111,6 @@ async def create():
                         tag_name.strip()
                     )
                     if tag is None:
-                        # Створити новий тег, якщо його не існує
                         new_tag = await db.fetchrow(
                             "INSERT INTO tags (name) VALUES ($1) RETURNING *",
                             tag_name.strip()
@@ -110,7 +119,6 @@ async def create():
                     else:
                         tag_id = tag[0]
 
-                    # Додати зв'язок між грою та тегом
                     await db.execute(
                         "INSERT INTO game_tag_association (game_id, tag_id) VALUES ($1, $2)",
                         new_game[0], tag_id
@@ -153,8 +161,6 @@ async def create():
             os.remove(filename)
             return redirect("/news")
     
-    # if not session.get("role"):
-    #     return  redirect("/login")
 
     return render_template("create.html")
 
@@ -281,6 +287,15 @@ async def game_detail(game_id):
                     "SELECT * FROM users WHERE username=$1",
                     name
                 )
+                check_rat= await conn.fetchrow(
+                    "SELECT * FROM ratings WHERE user_id=$1  AND  games_id=$2",
+                    user[0], 
+                    game_id,
+                )
+                if check_rat != None:
+                    flash("You have already rated!", "error")
+                    return redirect(f"/games/{game_id}")
+             
                 new_rating = await conn.fetchrow(
                     "INSERT INTO ratings (user_id, rating, games_id) VALUES ($1, $2, $3) RETURNING *",
                     user[0], 
@@ -329,7 +344,7 @@ async def game_detail(game_id):
             game = await conn.fetch('SELECT * FROM games WHERE id=$1', game_id)
             rating=[]
             for i in ratings:
-                rating.append(int(i[1]))
+                rating.append(int(i[2]))
             r=sum(rating)/len(rating)
         
         except:
@@ -380,6 +395,14 @@ async def new_detail(news_id):
                     "SELECT * FROM users WHERE username=$1",
                     name
                 )
+                check_rat= await conn.fetchrow(
+                    "SELECT * FROM ratings WHERE user_id = $1  AND news_id = $2",
+                    user[0], 
+                    news_id,
+                )
+                if check_rat != None:
+                    flash("You have already rated!", "error")
+                    return redirect(f"/news/{news_id}")
                 new_rating = await conn.fetchrow(
                     "INSERT INTO ratings (user_id, rating, news_id) VALUES ($1, $2, $3) RETURNING *",
                     user[0], 
@@ -428,8 +451,8 @@ async def new_detail(news_id):
         ratings= await conn.fetch('SELECT * FROM ratings WHERE news_id=$1', news_id)
         new = await conn.fetch('SELECT * FROM news WHERE id=$1', news_id)
         rating=[]
-        for i in ratings:
-            rating.append(int(i[1]))
+        for i in ratings:   
+            rating.append(int(i[2]))
         r=sum(rating)/len(rating)
     except:
         r='There are no ratings yet'
@@ -439,15 +462,6 @@ async def new_detail(news_id):
 
         return  render_template("new.html", new=new[0],rating=r,comments=com,tags=tag)
 
-
-# # Сортування новин за рейтингом (припустимо, що рейтинг зберігається у полі `rating`)
-# sorted_by_rating = sorted(news, key=lambda x: x.rating, reverse=True)
-
-# # Сортування новин за датою (припустимо, що дата зберігається у полі `date`)
-# sorted_by_date = sorted(news, key=lambda x: x.date, reverse=True)
-
-# # Передача відсортованих списків новин до шаблону
-# return render_template("news.html", sorted_by_rating=sorted_by_rating, sorted_by_date=sorted_by_date)
 
 
 

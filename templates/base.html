@@ -17,28 +17,27 @@
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="/">Home</a>
-          </li>
-          <li class="nav-item">
             <a class="nav-link" href="/news">News</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="/games">Games</a>
           </li>
           <li class="nav-item">
-            {% if 'role' in session == Editor %}
-              <a class="nav-link" href="/out">Logout</a>
-              <li class="nav-item">
-                <a class="nav-link" href="/profile/{{ session['username'] }}">Profile</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/create">Create</a>
-              </li>
-            {% elif 'username' in session != None %}
+            {% if 'username' in session != None %}
+              {% if  session['role'] == 'Editor' %}
                 <a class="nav-link" href="/out">Logout</a>
                 <li class="nav-item">
                   <a class="nav-link" href="/profile/{{ session['username'] }}">Profile</a>
                 </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="/create">Create</a>
+                </li>
+              {% else %}
+                <a class="nav-link" href="/out">Logout</a>
+                <li class="nav-item">
+                  <a class="nav-link" href="/profile/{{ session['username'] }}">Profile</a>
+                </li>
+              {% endif %}
             {% else %}
               <a class="nav-link" href="/sign">Sign</a>
               <li class="nav-item">
